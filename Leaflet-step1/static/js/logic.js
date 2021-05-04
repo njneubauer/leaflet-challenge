@@ -1,9 +1,18 @@
 var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson"
 
 d3.json(queryUrl).then(function(data){
-    console.log(data.features);
     createFeatures(data.features);
 });
+
+function getColor(d) {
+    return  d <=  10 ? '#1a9850':
+            d <=  30 ? '#91cf60':
+            d <=  50 ? '#d9ef8b':
+            d <=  70 ? '#fee08b':
+            d <=  90 ? '#fc8d59':
+                       '#d73027'
+};
+
 
 function createFeatures(earthquakeData){
     
@@ -12,24 +21,20 @@ function createFeatures(earthquakeData){
         + feature.properties.mag + "<br />" + "Depth: " + feature.geometry.coordinates[2] + "</p>")
     }
 
-    var colorScale = {
-
-    }
-
+ 
     var earthquakes = L.geoJSON(earthquakeData, {
         onEachFeature: onEachFeature,
         pointToLayer: function (feature, latlng){
             return new L.circleMarker(latlng, {
-                radius: feature.properties.mag*2.5,
-                fillColor: feature.geometry.coordinates[2],
-                color: [],
+                radius: feature.properties.mag*3,
+                fillColor: getColor(feature.geometry.coordinates[2]),
+                color: "#000",
                 weight: 1,
                 opacity: 1,
-                fillOpacity: 0.8
+                fillOpacity: 0.7
             })
         }
     });
-
     createMap(earthquakes);
 };
 
@@ -54,11 +59,47 @@ function createMap(earthquakes) {
 
     var myMap = L.map("map", {
         center: [37.09, -95.71],
-        zoom: 5,
+        zoom: 4,
         layers: [street, earthquakes]
     });
+
+        
+    var legend = L.control({position: 'bottomright'});
+
+    legend.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend'),
+            grades = [-10, 10, 30, 50, 70, 90],
+            labels = [];
+
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+        }
+
+        return div;
+    };
+
+    legend.addTo(myMap);
+
 
     L.control.layers(baseMaps, overlayMaps, {
         collapsed: false
     }).addTo(myMap);
+
+
+
 };
+
+
+
+
+
+
+
+
+
+
+
